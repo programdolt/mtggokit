@@ -15,7 +15,7 @@ type LocalFileStreamer struct {
 	container    container.Container
 	cfg          *LocalFileStreamerCfg
 	fileReader   *bufio.Reader
-	line         string
+	line         []byte
 	eof          bool
 	result       []ParserResult
 	curLen       int
@@ -62,7 +62,7 @@ func (fs *LocalFileStreamer) HasNext() (bool, error) {
 	return fs.curLen < len(fs.result) || hasNext, nil
 }
 
-func (fs *LocalFileStreamer) readLn(r *bufio.Reader) (string, error) {
+func (fs *LocalFileStreamer) readLn(r *bufio.Reader) ([]byte, error) {
 	var (
 		isPrefix       = true
 		err      error = nil
@@ -72,7 +72,7 @@ func (fs *LocalFileStreamer) readLn(r *bufio.Reader) (string, error) {
 		line, isPrefix, err = r.ReadLine()
 		ln = append(ln, line...)
 	}
-	return string(ln), err
+	return ln, err
 }
 
 func (fs *LocalFileStreamer) isEof(err error) bool {
@@ -92,7 +92,7 @@ func (fs *LocalFileStreamer) Next() (container.DataMode, container.MapKey, inter
 		}
 		return r.DataMode, r.Key, r.Value, r.Err
 	}
-	result := fs.cfg.DataParser.Parse([]byte(fs.line), nil)
+	result := fs.cfg.DataParser.Parse(fs.line, nil)
 	if result == nil {
 		fs.errorNum++
 		return container.DataModeAdd, nil, nil, errors.New(fmt.Sprintf("Parser error"))
